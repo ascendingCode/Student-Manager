@@ -16,39 +16,52 @@ namespace StudentManager
                 new Student("Zanne", 9, Course.First) // Этот студент не будет добавлен в базу данных, т.к его возраст ниже чем минимальный (Смотреть Settings.cs).
             };
             database.Add(students); //Добавить в базу данных студентов. 
-            database.PrintAllStudents(); //Вывести на экран всех студентов, которые есть в базе данных.
+            (string name, int age, string course, string date) = database.GetStudentInfo(students[1].id); //Получим информацию об Jony.
+            string[] JonyInfo = database.GetStudentInfoToArray(students[1].id); //Также можно получить информацию в массив.
+
+            Console.WriteLine("Jony information");
+            Console.WriteLine(name);
+            Console.WriteLine(age);
+            Console.WriteLine(course);
+            Console.WriteLine(date);   
+            /*
+                Поиск студентов по имени. 
+                Можно указывать просто букву, на которую начинается имя, или начало имени.
+            */
+            (string[]StudentsName, int[]StudentsAge, string[]StudentsCourse, string[]StudentsDate) information = database.FindByName("J"); 
+            string[,]FindStudentsArray = database.FindByNameToArray("J"); //Также можно получить результаты поиска в массив.
 
             Console.WriteLine("=================");
-            Console.WriteLine("Jony information");
-            string[]GetStudentInfo = database.GetStudentInfo(students[1].id); // Получаем информацию о студенте Jony по его айди.
-            foreach(string info in GetStudentInfo) 
+            Console.WriteLine("Searching results: ");
+            foreach(string readNames in information.StudentsName)
             {
-                Console.WriteLine(info);
+                Console.WriteLine(readNames);
             }
-            Console.WriteLine();
-
-            string[,]FindStudents = database.FindByNameS("J"); //Ищем студентов.
-
-            for(int i = 0; i < FindStudents.GetLength(0); i++) //Выводим на экран результат.
-            {
-                for(int j = 0; j < FindStudents.GetLength(1); j++)
-                {
-                    Console.WriteLine(FindStudents[i,j]);
-                }
-            }
-            database.Remove(students[1].id); //Удаляем Jony из базы данных.
-
-            Console.WriteLine(database.IsInDataBase(students[1].id)); //Есть ли Jony в базе данных?
 
             if(database.IsInDataBase(students[2].id)) //Если Bob есть в базе данных
             {
-                database.Edit(students[2].id, students[2].name, students[2].age, Course.Fourth); //Изменим курс на 4.
+                database.Remove(students[2].id); //Удалим его.
+                /*
+                    Также есть методы RemoveLast, и RemoveFirst.
+                    RemoveLast - удаляет последнего студента из базы данных.
+                    RemoveFirst - удаляет первого студента из базы данных.
+                */
             }
+            
+            Console.WriteLine("All students: ");
+            database.PrintAllStudents(); //Выводим всех студентов на экран, которые есть в базе данных.
 
-            GetStudentInfo = database.GetStudentInfo(students[2].id); //Проверим, изменился ли курс у Bob?
-            Console.WriteLine(GetStudentInfo[Settings.CourseIndex]); //Да, курс изменился.
 
-            database.Clear(); //Очищаем базу данных.
+            database.Edit(students[1].id, students[1].name, students[1].age, Course.Fourth); //Изменим Jony курс на четвертый.
+
+            JonyInfo = database.GetStudentInfoToArray(students[1].id); //Проверим это.
+
+            Console.WriteLine("New information about Jony.");
+            foreach(string readInfo in JonyInfo)
+            {
+                Console.WriteLine(readInfo);
+            }            
+            database.Clear(); //Очистим базу данных.
         }
     }
 }

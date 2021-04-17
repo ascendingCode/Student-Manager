@@ -22,15 +22,23 @@ namespace src
             database[maxRow, Settings.GuidIndex] = student.id.ToString();
 
         }
-        private void CopyArray(string[,]array, ref string[,]outArray)
+        
+        private void CopyArray<T>(T[,] array, ref T[,] outArray)
         {
             for(int i = 0;i < array.GetLength(0); i++)
             {
                 for(int j = 0;j < array.GetLength(1); j++)
                 {
-                        outArray[i,j] = array[i,j];
+                    outArray[i,j] = array[i,j];
                 }
              }
+        }
+        private void CopyArray<T>(T[]array, ref T[]outArray)
+        {
+            for(int i = 0; i < array.Length; i++)
+            {
+                outArray[i] = array[i];
+            }
         }
         private bool CountIsNull()=> Count <= 0 ? true : false;
         public void Add(List<Student> students)
@@ -61,26 +69,34 @@ namespace src
                 }
             }
         }
-        public string[] GetStudentInfo(Guid guid)
+        public string[] GetStudentInfoToArray(Guid guid)
         {
             if(IsInDataBase(guid))
             {
-                for(int i = 0; i < database.GetLength(0); i++)
-                {
-                    if(database[i, Settings.GuidIndex] == guid.ToString())
-                    {
-                        string[] Information = new string[Settings.MaxCools];
-                        for(int j = 0; j < Information.Length; j++)
-                        {
-                            Information[j] = database[i ,j];
-                        }
-                        return Information;
-                    }
-                }
+                string[]information = new string[Settings.MaxCools];
+                int index = GetIndex(guid);
+                information[Settings.NameIndex] = database[index, Settings.NameIndex];
+                information[Settings.AgeIndex] = database[index, Settings.AgeIndex];
+                information[Settings.CourseIndex] = database[index, Settings.CourseIndex];
+                information[Settings.RegistrationIndex] = database[index, Settings.RegistrationIndex];
+                information[Settings.GuidIndex] = database[index, Settings.GuidIndex];
+                return information;
             }
-            return null;
+            else 
+                return null;
         }
-        public string[,]FindByNameS(string name)
+        public (string name, int age, string course, string registrationDate) GetStudentInfo(Guid guid)
+        {
+            if(IsInDataBase(guid))
+            {
+                int index = GetIndex(guid);
+                return (database[index, Settings.NameIndex], int.Parse(database[index, Settings.AgeIndex]), 
+                        database[index,Settings.CourseIndex], database[index,Settings.RegistrationIndex]);
+            }
+            else
+                return (string.Empty, -1, string.Empty, string.Empty);
+        }
+        public string[,]FindByNameToArray(string name)
         {
             string[,]result = new string[0,0];
             name??=string.Empty;
@@ -90,11 +106,11 @@ namespace src
                 string GetName = database[i, Settings.NameIndex];
                 for(int j = 0; j < name.Length; j++)
                 {
-                    if(GetName[j] != name[j])
+                    if((GetName[j] != name[j]) || (j == (GetName.Length - 1)))
                     {
                         break;
                     }
-                    if(j == (name.Length - 1))
+                    else if(j == (name.Length - 1))
                     {
                         string[,]save = result;
                         result = new string[result.GetLength(0) + 1, Settings.MaxCools];
@@ -111,6 +127,41 @@ namespace src
             if(result.GetLength(0) != 0)
                 return result;
             return null;
+        }
+        public (string[]names, int[]age, string[]course, string[]registrationDate) FindByName(string name)
+        {
+            (string[]nResult, int[]aResult, string[]cResult, string[]rResult) result = (new string[0], new int[0], new string[0], new string[0]);
+
+            if((name == null) || (name.Length <= 0))
+                    goto end;
+            for(int i = 0; i < database.GetLength(0); i++)
+            {
+                string GetName = database[i, Settings.NameIndex];
+                for(int j = 0; j < name.Length; j++)
+                {
+                    if((GetName[j] != name[j]) || (j == (GetName.Length - 1)))
+                    {
+                        break;
+                    }
+                    else if(j == (name.Length - 1))
+                    {
+                        (string[]nResult, int[]aResult, string[]cResult, string[]rResult) save = result;
+                        result = (new string[result.nResult.Length + 1], new int[result.aResult.Length + 1], 
+                                  new string[result.cResult.Length + 1], new string[result.rResult.Length + 1]);
+                        CopyArray(save.nResult, ref result.nResult);
+                        CopyArray(save.aResult, ref result.aResult);
+                        CopyArray(save.cResult, ref result.cResult);
+                        CopyArray(save.rResult, ref result.rResult);
+
+                        result.nResult[result.nResult.Length - 1] = GetName;
+                        result.aResult[result.aResult.Length - 1] = int.Parse(database[i, Settings.AgeIndex]);
+                        result.cResult[result.cResult.Length - 1] = database[i, Settings.CourseIndex];
+                        result.rResult[result.rResult.Length - 1] = database[i, Settings.RegistrationIndex];
+                    }
+                }
+            }
+            end:
+            return result;
         }
         public void Remove(Guid guid)
         {
@@ -167,6 +218,18 @@ namespace src
                     return i;
             }
             return -1;
+        }
+        public void Edit(Guid guid, string newName)
+        {
+            newName ??= string.Empty;
+            if((IsInDataBase(guid)) && (newName.Length != 0))
+            {
+                database[GetIndex(guid), Settings.NameIndex] = newName;
+            }
+        }
+        public void Edit(Guid guid, string newName, int newAge)
+        {
+            Edit(guid, newName, newAge, (Course)Enum.Parse(typeof(Course), database[GetIndex(guid), Settings.CourseIndex]));
         }
         public void Edit(Guid guid, string newName, int newAge, Course newType)
         {
